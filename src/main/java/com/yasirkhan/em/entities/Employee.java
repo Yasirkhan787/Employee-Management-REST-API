@@ -34,14 +34,13 @@ public class Employee {
      */
     protected Employee(){}
 
-    // Constructor
-    public Employee(UUID id, String name, String email, String department, double salary, LocalDate joiningDate) {
-        this.id = id;
-        this.name = name;
-        this.email = email;
-        this.department = department;
-        this.salary = salary;
-        this.joiningDate = joiningDate;
+    // Private constructor that takes the Builder
+    private Employee(Builder builder) {
+        this.name = builder.name;
+        this.email = builder.email;
+        this.department = builder.department;
+        this.salary = builder.salary;
+        this.joiningDate = builder.joiningDate;
     }
 
     // Getters and Setters
@@ -92,4 +91,50 @@ public class Employee {
     public void setJoiningDate(LocalDate joiningDate) {
         this.joiningDate = joiningDate;
     }
+
+    // Static method to get a new builder instance
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    // Static Nested Builder class
+    public static class Builder{
+        private String name;
+        private String email;
+        private String department;
+        private Double salary;
+        private LocalDate joiningDate;
+
+        public Builder name(String name) {
+            this.name = name;
+            return this; // Returning 'this' enables method chaining
+        }
+
+        public Builder email(String email) {
+            this.email = email;
+            return this;
+        }
+
+        public Builder department(String department) {
+            this.department = department;
+            return this;
+        }
+
+        public Builder salary(Double salary) {
+            this.salary = salary;
+            return this;
+        }
+
+        public Builder joiningDate(LocalDate joiningDate) {
+            this.joiningDate = joiningDate;
+            return this;
+        }
+
+        // The final build method that build the employee
+        public Employee build() {
+            return new Employee(this);
+        }
+
+    }
+
 }
