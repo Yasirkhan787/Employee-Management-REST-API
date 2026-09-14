@@ -1,0 +1,11 @@
+package com.yasirkhan.em.repositories;
+
+import com.yasirkhan.em.entities.Employee;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+
+import java.util.UUID;
+
+@Repository
+public interface EmployeeRepositories extends JpaRepository<Employee, UUID> {
+}
