@@ -3,12 +3,14 @@ package com.yasirkhan.em.services.implementations;
 import com.yasirkhan.em.dtos.EmployeeRequest;
 import com.yasirkhan.em.dtos.EmployeeResponse;
 import com.yasirkhan.em.entities.Employee;
+import com.yasirkhan.em.exceptions.ResourceAlreadyExist;
 import com.yasirkhan.em.exceptions.ResourceNotFoundException;
 import com.yasirkhan.em.repositories.EmployeeRepository;
 import com.yasirkhan.em.services.EmployeeService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -23,6 +25,13 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeResponse addEmployee(EmployeeRequest request) {
+
+        // Check if email already exists
+        if (repository.existsByEmail(request.email())){
+            throw new ResourceAlreadyExist("User with Email: " + request.email() + " is already exist");
+        }
+
+
         Employee emp = Employee.builder()
                 .name(request.name())
                 .email(request.email())
@@ -87,5 +96,7 @@ public class EmployeeServiceImpl implements EmployeeService {
         return repository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + employeeId));
     }
+
+
 
 }
