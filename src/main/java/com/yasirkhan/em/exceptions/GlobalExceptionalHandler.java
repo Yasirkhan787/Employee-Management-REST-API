@@ -1,6 +1,7 @@
 package com.yasirkhan.em.exceptions;
 
 import com.yasirkhan.em.dtos.ErrorResponse;
+import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -39,6 +40,17 @@ public class GlobalExceptionalHandler {
         return new ResponseEntity<>(errorResponse, exception.getStatus());
     }
 
+    // Handle PropertyReference Exception
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ErrorResponse> handlePropertyReferenceException(PropertyReferenceException ex) {
+        ErrorResponse error = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Invalid sort parameter: " + ex.getMessage(),
+                LocalDateTime.now()
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+
     // Handle Validation Exception
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions (MethodArgumentNotValidException exception) {
@@ -54,9 +66,10 @@ public class GlobalExceptionalHandler {
     // Fallback for any other unhandled exceptions
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception exception) {
+
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "An unexpected error occurred on the server.",
+                "An unexpected error occurred on the server: " + exception.getMessage(),
                 LocalDateTime.now()
         );
 

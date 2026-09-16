@@ -4,9 +4,12 @@ import com.yasirkhan.em.dtos.EmployeeRequest;
 import com.yasirkhan.em.dtos.EmployeeResponse;
 import com.yasirkhan.em.services.EmployeeService;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
@@ -48,12 +51,23 @@ public class EmployeeController {
     }
 
     // Get All Employees
+    /**
+         * Instead of manually defining @RequestParam for pageNumber, pageSize, sortBy, and sortDir,
+         * we can delete all of them and just ask Spring for a Pageable object directly in our Controller.
+         * Spring will automatically look at the URL and construct the PageRequest and Sort objects for us!
+         * </br>
+         * Default Values: </br>
+         * Page = 0 Spring Data pagination is 0-indexed. Page 0 is the first page. * </br>
+         * Size = 10 </br>
+         * Sort = Unsorted </br>
+         * We can override Spring Default by Using @PageableDefault annotation
+     */
     @GetMapping
     public ResponseEntity<List<EmployeeResponse>> getAllEmployees(
-            @RequestParam(required = false, defaultValue = "1") String pageNumber,
-            @RequestParam(required = false, defaultValue = "5") String pageSize
+            @PageableDefault(page = 0, size = 5, sort = "id", direction = Sort.Direction.ASC)
+            Pageable pageable
     ) {
-        return ResponseEntity.ok(service.getAllEmployees(pageNumber, pageSize));
+        return ResponseEntity.ok(service.getAllEmployees(pageable));
     }
 
     // Get Employee By ID

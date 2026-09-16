@@ -7,8 +7,8 @@ import com.yasirkhan.em.exceptions.ResourceAlreadyExist;
 import com.yasirkhan.em.exceptions.ResourceNotFoundException;
 import com.yasirkhan.em.repositories.EmployeeRepository;
 import com.yasirkhan.em.services.EmployeeService;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.UUID;
@@ -66,21 +66,16 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     /**
          * We Call repository findAll method, and it takes a Pageable request.
-         * @param pageNumber & pageSize We Pass Both parameters to PageRequest static .of() method.
+         * @param pageable We pass pageable to repository that include pageNumber(page), pageSize(size)
+         * and Sort (sorterBy and sortOrder)
          * @return It returns the Slice<Employee> by default it Return Page<Employee> but we overwrite
          * it in repository interface by writing Derived Query to Optimize Query because default to
          * return page hibernate run 2 query one for data chunks and other to count all elements.
      */
     @Override
-    public List<EmployeeResponse> getAllEmployees(String pageNumber, String pageSize) {
-
+    public List<EmployeeResponse> getAllEmployees(Pageable pageable) {
         return repository
-                .findAllBy(
-                        PageRequest.of(
-                                Integer.parseInt(pageNumber),
-                                Integer.parseInt(pageSize)
-                        )
-                )
+                .findAllBy(pageable)
                 .getContent()
                 .stream()
                 .map(this::mapToResponse)
@@ -111,6 +106,4 @@ public class EmployeeServiceImpl implements EmployeeService {
         return repository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + employeeId));
     }
-
-
 }
