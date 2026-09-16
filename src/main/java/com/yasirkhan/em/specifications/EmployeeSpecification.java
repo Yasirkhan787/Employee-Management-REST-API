@@ -1,5 +1,6 @@
 package com.yasirkhan.em.specifications;
 
+import com.yasirkhan.em.dtos.EmployeeSearchCriteria;
 import com.yasirkhan.em.entities.Employee;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
@@ -9,20 +10,41 @@ import java.util.List;
 
 public class EmployeeSpecification {
 
-    public static Specification<Employee> getEmployeeSpecification(String search) {
+    public static Specification<Employee> getEmployeeSpecification(EmployeeSearchCriteria searchCriteria) {
         return (root, criteriaQuery, criteriaBuilder) -> {
 
-            if (search == null || search.isEmpty()) {
-                return criteriaBuilder.conjunction(); // Return always true (Use when user applies no filters)
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (searchCriteria.search() != null && !searchCriteria.search().isEmpty()) {
+                String likeSearch = "%" + searchCriteria.search() + "%";
+                Predicate nameMatch = criteriaBuilder.like(root.get("name"), likeSearch);
+                Predicate emailMatch = criteriaBuilder.like(root.get("email"), likeSearch);
+                Predicate departmentMatch = criteriaBuilder.like(root.get("department"), likeSearch);
+                predicates.add(criteriaBuilder.or(nameMatch, emailMatch, departmentMatch));
             }
-            String likeSearch = "%"+ search +"%";
-            List<Predicate> predicate = new ArrayList<>();
-            predicate.add(criteriaBuilder.like(root.get("id").as(String.class),likeSearch));
-            predicate.add(criteriaBuilder.like(root.get("name"),likeSearch));
-            predicate.add(criteriaBuilder.like(root.get("email"),likeSearch));
-            predicate.add(criteriaBuilder.like(root.get("department"),likeSearch));
-            predicate.add(criteriaBuilder.like(root.get("salary").as(String.class),likeSearch));
-            return criteriaBuilder.or(predicate.toArray(new Predicate[0]));
+
+            if (searchCriteria.id() != null) {
+                // UUIDs use exact match if we want to use like wee need to convert it into String
+                predicates.add(criteriaBuilder.equal(root.get("id"), searchCriteria.id()));
+            }
+
+            if (searchCriteria.name() != null && !searchCriteria.name().isEmpty()) {
+                predicates.add(criteriaBuilder.like(root.get("name"), "%" + searchCriteria.name() + "%"));
+            }
+
+            if (searchCriteria.email() != null && !searchCriteria.email().isEmpty()) {
+                predicates.add(criteriaBuilder.like(root.get("email"), "%" + searchCriteria.email() + "%"));
+            }
+
+            if (searchCriteria.department() != null && !searchCriteria.department().isEmpty()) {
+                predicates.add(criteriaBuilder.like(root.get("department"), "%" + searchCriteria.department() + "%"));
+            }
+
+            if (searchCriteria.startDate() != null && searchCriteria.endDate() != null) {
+                predicates.add(criteriaBuilder.between(root.get("joiningDate"), searchCriteria.startDate(), searchCriteria.endDate()));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
     }
 }

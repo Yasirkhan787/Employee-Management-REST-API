@@ -2,6 +2,7 @@ package com.yasirkhan.em.controllers;
 
 import com.yasirkhan.em.dtos.EmployeeRequest;
 import com.yasirkhan.em.dtos.EmployeeResponse;
+import com.yasirkhan.em.dtos.EmployeeSearchCriteria;
 import com.yasirkhan.em.services.EmployeeService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Sort;
@@ -66,7 +67,7 @@ public class EmployeeController {
     public ResponseEntity<List<EmployeeResponse>> getAllEmployees(
             @PageableDefault(page = 0, size = 5, sort = "id", direction = Sort.Direction.ASC)
             Pageable pageable,
-            @RequestParam(required = false) String search
+            @RequestParam(required = false) EmployeeSearchCriteria search
     ) {
         return ResponseEntity.ok(service.getAllEmployees(search, pageable));
     }

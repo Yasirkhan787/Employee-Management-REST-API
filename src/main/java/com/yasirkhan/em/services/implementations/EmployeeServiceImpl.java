@@ -2,6 +2,7 @@ package com.yasirkhan.em.services.implementations;
 
 import com.yasirkhan.em.dtos.EmployeeRequest;
 import com.yasirkhan.em.dtos.EmployeeResponse;
+import com.yasirkhan.em.dtos.EmployeeSearchCriteria;
 import com.yasirkhan.em.entities.Employee;
 import com.yasirkhan.em.exceptions.ResourceAlreadyExist;
 import com.yasirkhan.em.exceptions.ResourceNotFoundException;
@@ -75,7 +76,7 @@ public class EmployeeServiceImpl implements EmployeeService {
          * return page hibernate run 2 query one for data chunks and other to count all elements.
      */
     @Override
-    public List<EmployeeResponse> getAllEmployees(String search, Pageable pageable) {
+    public List<EmployeeResponse> getAllEmployees(EmployeeSearchCriteria search, Pageable pageable) {
 
 
         return repository
