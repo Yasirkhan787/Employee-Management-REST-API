@@ -10,6 +10,6 @@ public interface EmployeeService {
     EmployeeResponse addEmployee(EmployeeRequest request);
     EmployeeResponse updateEmployee(UUID employeeId, EmployeeRequest updateRequest);
     void deleteEmployee(UUID employeeId);
-    List<EmployeeResponse> getAllEmployees();
+    List<EmployeeResponse> getAllEmployees(String pageNumber, String pageSize);
     EmployeeResponse getEmployeeById(UUID employeeId);
 }

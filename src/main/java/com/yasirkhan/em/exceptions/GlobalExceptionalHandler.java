@@ -27,6 +27,18 @@ public class GlobalExceptionalHandler {
         return new ResponseEntity<>(errorResponse, exception.getStatus());
     }
 
+    // Handle ResourceAlreadyExist Exception
+    @ExceptionHandler(ResourceAlreadyExist.class)
+    public ResponseEntity<ErrorResponse> handleResourceAlreadyExist(ResourceAlreadyExist exception) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                exception.getStatus().value(),
+                exception.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return new ResponseEntity<>(errorResponse, exception.getStatus());
+    }
+
     // Handle Validation Exception
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, String>> handleValidationExceptions (MethodArgumentNotValidException exception) {

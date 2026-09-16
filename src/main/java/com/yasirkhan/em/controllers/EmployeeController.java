@@ -49,8 +49,11 @@ public class EmployeeController {
 
     // Get All Employees
     @GetMapping
-    public ResponseEntity<List<EmployeeResponse>> getAllEmployees() {
-        return ResponseEntity.ok(service.getAllEmployees());
+    public ResponseEntity<List<EmployeeResponse>> getAllEmployees(
+            @RequestParam(required = false, defaultValue = "1") String pageNumber,
+            @RequestParam(required = false, defaultValue = "5") String pageSize
+    ) {
+        return ResponseEntity.ok(service.getAllEmployees(pageNumber, pageSize));
     }
 
     // Get Employee By ID
