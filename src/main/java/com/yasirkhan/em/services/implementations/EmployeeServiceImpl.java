@@ -7,6 +7,7 @@ import com.yasirkhan.em.exceptions.ResourceAlreadyExist;
 import com.yasirkhan.em.exceptions.ResourceNotFoundException;
 import com.yasirkhan.em.repositories.EmployeeRepository;
 import com.yasirkhan.em.services.EmployeeService;
+import com.yasirkhan.em.specifications.EmployeeSpecification;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
 
@@ -66,6 +67,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     /**
          * We Call repository findAll method, and it takes a Pageable request.
+         * @param search This hold the field name by which we perform filtration
          * @param pageable We pass pageable to repository that include pageNumber(page), pageSize(size)
          * and Sort (sorterBy and sortOrder)
          * @return It returns the Slice<Employee> by default it Return Page<Employee> but we overwrite
@@ -73,9 +75,11 @@ public class EmployeeServiceImpl implements EmployeeService {
          * return page hibernate run 2 query one for data chunks and other to count all elements.
      */
     @Override
-    public List<EmployeeResponse> getAllEmployees(Pageable pageable) {
+    public List<EmployeeResponse> getAllEmployees(String search, Pageable pageable) {
+
+
         return repository
-                .findAllBy(pageable)
+                .findAllBy(EmployeeSpecification.getEmployeeSpecification(search), pageable)
                 .getContent()
                 .stream()
                 .map(this::mapToResponse)

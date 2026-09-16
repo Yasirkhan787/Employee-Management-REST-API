@@ -65,9 +65,10 @@ public class EmployeeController {
     @GetMapping
     public ResponseEntity<List<EmployeeResponse>> getAllEmployees(
             @PageableDefault(page = 0, size = 5, sort = "id", direction = Sort.Direction.ASC)
-            Pageable pageable
+            Pageable pageable,
+            @RequestParam(required = false) String search
     ) {
-        return ResponseEntity.ok(service.getAllEmployees(pageable));
+        return ResponseEntity.ok(service.getAllEmployees(search, pageable));
     }
 
     // Get Employee By ID

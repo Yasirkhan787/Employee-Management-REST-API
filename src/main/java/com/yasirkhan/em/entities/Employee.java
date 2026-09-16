@@ -23,7 +23,7 @@ public class Employee {
     private String department;
 
     @Column(nullable = false)
-    private double salary;;
+    private double salary;
 
     @Column(name = "joining_date", nullable = false, updatable = false)
     private LocalDate joiningDate;

@@ -11,6 +11,6 @@ public interface EmployeeService {
     EmployeeResponse addEmployee(EmployeeRequest request);
     EmployeeResponse updateEmployee(UUID employeeId, EmployeeRequest updateRequest);
     void deleteEmployee(UUID employeeId);
-    List<EmployeeResponse> getAllEmployees(Pageable pageable);
+    List<EmployeeResponse> getAllEmployees(String search, Pageable pageable);
     EmployeeResponse getEmployeeById(UUID employeeId);
 }
