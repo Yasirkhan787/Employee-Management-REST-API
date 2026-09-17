@@ -67,7 +67,9 @@ public class EmployeeController {
     public ResponseEntity<List<EmployeeResponse>> getAllEmployees(
             @PageableDefault(page = 0, size = 5, sort = "id", direction = Sort.Direction.ASC)
             Pageable pageable,
-            @RequestParam(required = false) EmployeeSearchCriteria search
+//            @RequestParam(required = false)
+            @ModelAttribute
+            EmployeeSearchCriteria search
     ) {
         return ResponseEntity.ok(service.getAllEmployees(search, pageable));
     }

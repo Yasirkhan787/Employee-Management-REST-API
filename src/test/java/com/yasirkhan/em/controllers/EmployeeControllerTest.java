@@ -1,3 +1,4 @@
+
 package com.yasirkhan.em.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,10 +9,10 @@ import com.yasirkhan.em.services.EmployeeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
@@ -23,8 +24,13 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(EmployeeController.class)
 public class EmployeeControllerTest {
@@ -32,11 +38,18 @@ public class EmployeeControllerTest {
     @Autowired
     private MockMvc mockMvc;
 
-    @MockBean
+    @MockitoBean
     private EmployeeService service;
 
-    @Autowired
-    private ObjectMapper objectMapper;
+    /*
+     * Create ObjectMapper manually because it is not available
+     * as a bean in this WebMvcTest context.
+     *
+     * findAndRegisterModules() registers the Java Time module,
+     * which allows Jackson to handle LocalDate.
+     */
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .findAndRegisterModules();
 
     private EmployeeRequest validRequest;
     private EmployeeResponse expectedResponse;
@@ -66,7 +79,9 @@ public class EmployeeControllerTest {
 
     @Test
     void addEmployee_ValidRequest_ReturnsCreated() throws Exception {
-        when(service.addEmployee(any(EmployeeRequest.class))).thenReturn(expectedResponse);
+
+        when(service.addEmployee(any(EmployeeRequest.class)))
+                .thenReturn(expectedResponse);
 
         mockMvc.perform(post("/api/v1/employees")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -78,25 +93,28 @@ public class EmployeeControllerTest {
 
     @Test
     void addEmployee_InvalidRequest_ReturnsBadRequest() throws Exception {
-        // Create an invalid request (empty name, negative salary)
+
         EmployeeRequest invalidRequest = new EmployeeRequest(
                 "",
                 "invalid-email",
                 "Engineering",
                 -100.0,
-                LocalDate.now().plusDays(5) // Future date
+                LocalDate.now().plusDays(5)
         );
 
         mockMvc.perform(post("/api/v1/employees")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(invalidRequest)))
                 .andExpect(status().isBadRequest());
-        // We could also assert the specific validation error messages here if needed.
     }
 
     @Test
     void updateEmployee_ValidRequest_ReturnsOk() throws Exception {
-        when(service.updateEmployee(eq(employeeId), any(EmployeeRequest.class))).thenReturn(expectedResponse);
+
+        when(service.updateEmployee(
+                eq(employeeId),
+                any(EmployeeRequest.class)
+        )).thenReturn(expectedResponse);
 
         mockMvc.perform(put("/api/v1/employees/{id}", employeeId)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -107,6 +125,7 @@ public class EmployeeControllerTest {
 
     @Test
     void deleteEmployee_ExistingId_ReturnsNoContent() throws Exception {
+
         doNothing().when(service).deleteEmployee(employeeId);
 
         mockMvc.perform(delete("/api/v1/employees/{id}", employeeId))
@@ -115,20 +134,27 @@ public class EmployeeControllerTest {
 
     @Test
     void getEmployeeById_ExistingId_ReturnsOk() throws Exception {
-        when(service.getEmployeeById(employeeId)).thenReturn(expectedResponse);
+
+        when(service.getEmployeeById(employeeId))
+                .thenReturn(expectedResponse);
 
         mockMvc.perform(get("/api/v1/employees/{id}", employeeId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("yasir@example.com"));
     }
 
+
+
     @Test
     void getAllEmployees_WithFilters_ReturnsOk() throws Exception {
-        List<EmployeeResponse> responses = Collections.singletonList(expectedResponse);
 
-        // Mock the service to return our list when called with ANY criteria and pageable
-        when(service.getAllEmployees(any(EmployeeSearchCriteria.class), any(Pageable.class)))
-                .thenReturn(responses);
+        List<EmployeeResponse> responses =
+                Collections.singletonList(expectedResponse);
+
+        when(service.getAllEmployees(
+                any(EmployeeSearchCriteria.class),
+                any(Pageable.class)
+        )).thenReturn(responses);
 
         mockMvc.perform(get("/api/v1/employees")
                         .param("department", "Engineering")
@@ -136,6 +162,7 @@ public class EmployeeControllerTest {
                         .param("size", "10")
                         .param("sort", "name,asc"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].department").value("Engineering"));
+                .andExpect(jsonPath("$[0].department")
+                        .value("Engineering"));
     }
 }
