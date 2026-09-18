@@ -4,11 +4,16 @@ import com.yasirkhan.em.dtos.EmployeeRequest;
 import com.yasirkhan.em.dtos.EmployeeResponse;
 import com.yasirkhan.em.dtos.EmployeeSearchCriteria;
 import com.yasirkhan.em.entities.Employee;
+import com.yasirkhan.em.entities.User;
+import com.yasirkhan.em.entities.enums.Role;
 import com.yasirkhan.em.exceptions.ResourceAlreadyExist;
 import com.yasirkhan.em.exceptions.ResourceNotFoundException;
 import com.yasirkhan.em.repositories.EmployeeRepository;
+import com.yasirkhan.em.repositories.UserRepository;
 import com.yasirkhan.em.services.EmployeeService;
 import com.yasirkhan.em.specifications.EmployeeSpecification;
+import jakarta.transaction.Transactional;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
 
@@ -19,20 +24,36 @@ import java.util.stream.Collectors;
 @Service
 public class EmployeeServiceImpl implements EmployeeService {
 
-    private final EmployeeRepository repository;
+    private final EmployeeRepository employeeRepository;
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
 
-    public EmployeeServiceImpl(EmployeeRepository repository) {
-        this.repository = repository;
+    public EmployeeServiceImpl(EmployeeRepository employeeRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        this.employeeRepository = employeeRepository;
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
+    @Transactional
     public EmployeeResponse addEmployee(EmployeeRequest request) {
 
         // Check if email already exists
-        if (repository.existsByEmail(request.email())) {
+        if (employeeRepository.existsByEmail(request.email())) {
             throw new ResourceAlreadyExist("User with Email: " + request.email() + " is already exist");
         }
 
+        // Check if username already exists
+        if (userRepository.existsByUsername(request.username())) {
+            throw new ResourceAlreadyExist("User with username: " + request.username() + " is already exist");
+        }
+
+        // Automatically save user first (because we put CascadeType.ALL with one to one mapping annotation in Employee class)
+        User user = User.builder()
+                .username(request.username())
+                .password(passwordEncoder.encode(request.password()))
+                .role(Role.EMPLOYEE)
+                .build();
 
         Employee emp = Employee.builder()
                 .name(request.name())
@@ -40,9 +61,10 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .department(request.department())
                 .salary(request.salary())
                 .joiningDate(request.joiningDate())
+                .user(user)
                 .build();
 
-        Employee saved = repository.save(emp);
+        Employee saved = employeeRepository.save(emp);
         return mapToResponse(saved);
     }
 
@@ -54,16 +76,16 @@ public class EmployeeServiceImpl implements EmployeeService {
         dbEmployee.setEmail(request.email());
         dbEmployee.setDepartment(request.department());
         dbEmployee.setSalary(request.salary());
-        Employee updated = repository.save(dbEmployee);
+        Employee updated = employeeRepository.save(dbEmployee);
         return mapToResponse(updated);
     }
 
     @Override
     public void deleteEmployee(UUID id) {
-        Employee dbEmployee = repository.findById(id)
+        Employee dbEmployee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
 
-        repository.delete(dbEmployee);
+        employeeRepository.delete(dbEmployee);
     }
 
     /**
@@ -79,7 +101,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     public List<EmployeeResponse> getAllEmployees(EmployeeSearchCriteria search, Pageable pageable) {
 
 
-        return repository
+        return employeeRepository
                 .findAllBy(EmployeeSpecification.getEmployeeSpecification(search), pageable)
                 .getContent()
                 .stream()
@@ -89,7 +111,7 @@ public class EmployeeServiceImpl implements EmployeeService {
 
     @Override
     public EmployeeResponse getEmployeeById(UUID id) {
-        Employee dbEmployee = repository.findById(id)
+        Employee dbEmployee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
 
         return mapToResponse(dbEmployee);
@@ -108,7 +130,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     private Employee findEmployeeById(UUID employeeId) {
-        return repository.findById(employeeId)
+        return employeeRepository.findById(employeeId)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + employeeId));
     }
 }

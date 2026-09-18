@@ -22,5 +22,11 @@ public record EmployeeRequest(
 
         @NotNull(message = "Joining date is required")
         @PastOrPresent(message = "Joining date cannot be in the future")
-        LocalDate joiningDate) {
+        LocalDate joiningDate,
+
+        @NotNull(message = "Username cannot be null")
+        String username,
+
+        @NotNull(message = "Password cannot be null")
+        String password ) {
 }

@@ -28,9 +28,13 @@ public class Employee {
     @Column(name = "joining_date", nullable = false, updatable = false)
     private LocalDate joiningDate;
 
-    /*
-        Default constructor for hibernate to create the object via reflection.
-        Making it protected to prevent from creating empty, invalid Employee Object
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name ="user_id", referencedColumnName = "id", nullable = false)
+    private User user;
+
+    /**
+        * Default constructor for hibernate to create the object via reflection.
+        * Making it protected to prevent from creating empty, invalid Employee Object
      */
     protected Employee(){}
 
@@ -41,6 +45,7 @@ public class Employee {
         this.department = builder.department;
         this.salary = builder.salary;
         this.joiningDate = builder.joiningDate;
+        this.user = builder.user;
     }
 
     // Getters and Setters
@@ -92,6 +97,14 @@ public class Employee {
         this.joiningDate = joiningDate;
     }
 
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
+    }
+
     // Static method to get a new builder instance
     public static Builder builder() {
         return new Builder();
@@ -104,6 +117,7 @@ public class Employee {
         private String department;
         private Double salary;
         private LocalDate joiningDate;
+        private User user;
 
         public Builder name(String name) {
             this.name = name;
@@ -127,6 +141,11 @@ public class Employee {
 
         public Builder joiningDate(LocalDate joiningDate) {
             this.joiningDate = joiningDate;
+            return this;
+        }
+
+        public Builder user(User user) {
+            this.user = user;
             return this;
         }
 
