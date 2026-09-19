@@ -46,14 +46,6 @@ public class EmployeeControllerTest {
     void setUp() {
         employeeId = UUID.randomUUID();
 
-        validRequest = new EmployeeRequest(
-                "Yasir Khan",
-                "yasir@example.com",
-                "Engineering",
-                90000.0,
-                LocalDate.of(2026, 1, 15)
-        );
-
         expectedResponse = new EmployeeResponse(
                 employeeId,
                 "Yasir Khan",

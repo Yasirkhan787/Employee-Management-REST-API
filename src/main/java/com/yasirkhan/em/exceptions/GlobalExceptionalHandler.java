@@ -63,6 +63,42 @@ public class GlobalExceptionalHandler {
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 
+    // Handle TokenExpired Exception
+    @ExceptionHandler(TokenExpiredException.class)
+    public ResponseEntity<ErrorResponse> handleTokenExpiredException(TokenExpiredException exception) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                exception.getStatus().value(),
+                exception.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return new ResponseEntity<>(errorResponse, exception.getStatus());
+    }
+
+    // Handle TokenNotFound Exception
+    @ExceptionHandler(TokenNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleTokenNotFoundException(TokenNotFoundException exception) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                exception.getStatus().value(),
+                exception.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return new ResponseEntity<>(errorResponse, exception.getStatus());
+    }
+
+    // Handle BadCredentials Exception
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorResponse> handleBadCredentialsException(BadCredentialsException exception) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                exception.getStatus().value(),
+                exception.getMessage(),
+                LocalDateTime.now()
+        );
+
+        return new ResponseEntity<>(errorResponse, exception.getStatus());
+    }
+
     // Fallback for any other unhandled exceptions
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception exception) {

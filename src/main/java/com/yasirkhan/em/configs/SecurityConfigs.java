@@ -1,25 +1,33 @@
 package com.yasirkhan.em.configs;
 
-import com.yasirkhan.em.services.implementations.CustomUserDetailsServiceImpl;
+import com.yasirkhan.em.filters.JwtAuthFilter;
+import com.yasirkhan.em.services.implementations.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfigs {
 
-    private final CustomUserDetailsServiceImpl userDetailsService;
+    private final UserDetailsServiceImpl userDetailsService;
+    private final JwtAuthFilter jwtAuthFilter;
 
-    public SecurityConfigs(CustomUserDetailsServiceImpl userDetailsService) {
+    public SecurityConfigs(UserDetailsServiceImpl userDetailsService, JwtAuthFilter jwtAuthFilter) {
         this.userDetailsService = userDetailsService;
+        this.jwtAuthFilter = jwtAuthFilter;
     }
 
     @Bean
@@ -28,24 +36,21 @@ public class SecurityConfigs {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
                         auth
-                                // Allow only POST requests to the employees endpoint
-                                .requestMatchers(
-                                        HttpMethod.POST,
-                                        "/api/v1/employees"
-                                )
-                                .permitAll()
-                                .requestMatchers("/api/v1/auth/**",
-                                        "/api-docs",
-                                        "/swagger-ui.html"
-                                )
+                                .requestMatchers(HttpMethod.POST, "/api/v1/employees")
+                                .permitAll()// Allow only POST requests to the employees endpoint
+                                .requestMatchers("/api/v1/auth/**", "/api-docs", "/swagger-ui.html")
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()
                 )
-                .httpBasic(Customizer
-                        .withDefaults()
-                )
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws AuthenticationException {
+        return config.getAuthenticationManager();
     }
 
     @Bean
@@ -61,6 +66,13 @@ public class SecurityConfigs {
     }
 }
 /*
+
+In a standard Spring Security HTTP request, the flow begins at the Security Filter Chain before reaching the DispatcherServlet, interceptors, and controllers. For a typical username and password login, a filter (such as UsernamePasswordAuthenticationFilter for form submissions or BasicAuthenticationFilter for HTTP headers) intercepts the payload. This filter extracts the credentials and constructs an unauthenticated Authentication object—typically a UsernamePasswordAuthenticationToken.
+
+This token is passed to the AuthenticationManager interface, whose default implementation, ProviderManager, iterates through a list of registered AuthenticationProviders. The ProviderManager calls the supports() method on each provider until one accepts the token type. The selected provider (usually DaoAuthenticationProvider) then validates the credentials using a UserDetailsService and a PasswordEncoder. Upon successful validation, the provider returns a fully populated, authenticated Authentication object containing the user's authorities. The intercepting filter then places this authenticated object into the SecurityContextHolder.
+
+In a stateless JWT architecture, the paradigm shifts. A custom filter extending OncePerRequestFilter is inserted into the chain, typically ordered just before the UsernamePasswordAuthenticationFilter. For subsequent incoming requests, this custom filter intercepts the request, extracts the JWT from the Authorization header, and validates its signature and claims. If valid, the filter manually creates an authenticated UsernamePasswordAuthenticationToken and injects it directly into the SecurityContextHolder, entirely bypassing the AuthenticationManager and AuthenticationProvider flow. The AuthenticationManager is instead exposed as a bean and explicitly invoked in a dedicated service class only during the initial /login route to verify credentials before generating the JWT.
+
     1. Configuration Time (Your @Bean method)
     When you write @Bean public AuthenticationProvider authenticationProvider(), you are not logging a user in.
     You are simply building the machine when the application starts up.
@@ -93,5 +105,5 @@ public class SecurityConfigs {
     However, when we move to our JWT implementation, you will need to expose it as a bean.
     With JWTs, we usually create a custom /login endpoint (e.g., in an AuthController) where we receive the username and
     password from the JSON request body. To verify those credentials in our controller, we have to inject the
-    AuthenticationManager and manually call its .authenticate() method.
+    AuthenticationManager and manually call its .authenticate() method. Sor for that we need AuthenticationManager bean.
  */

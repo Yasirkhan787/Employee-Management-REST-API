@@ -1,7 +1,9 @@
 package com.yasirkhan.em.controllers;
 
 import com.yasirkhan.em.dtos.AuthRequest;
+import com.yasirkhan.em.dtos.AuthResponse;
 import com.yasirkhan.em.services.AuthService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,15 +15,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("api/v1/auth")
 public class AuthController {
 
-    private final AuthService service;
+    private final AuthService authService;
 
-    public AuthController(AuthService service) {
-        this.service = service;
+    public AuthController(AuthService authService) {
+        this.authService = authService;
     }
 
-    @PostMapping
-    public ResponseEntity<?> authenticate(@RequestBody AuthRequest request) {
-        service.authenticate(request);
-        return new ResponseEntity<>(HttpStatus.OK);
+    @PostMapping("/login")
+    public ResponseEntity<AuthResponse> authenticate(@Valid @RequestBody AuthRequest request) {
+        return ResponseEntity.ok(authService.authenticate(request));
     }
 }
