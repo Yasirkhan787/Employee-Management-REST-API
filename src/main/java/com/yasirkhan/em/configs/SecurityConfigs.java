@@ -1,25 +1,33 @@
 package com.yasirkhan.em.configs;
 
-import com.yasirkhan.em.services.implementations.CustomUserDetailsServiceImpl;
+import com.yasirkhan.em.filters.JwtAuthFilter;
+import com.yasirkhan.em.services.implementations.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 public class SecurityConfigs {
 
-    private final CustomUserDetailsServiceImpl userDetailsService;
+    private final UserDetailsServiceImpl userDetailsService;
+    private final JwtAuthFilter jwtAuthFilter;
 
-    public SecurityConfigs(CustomUserDetailsServiceImpl userDetailsService) {
+    public SecurityConfigs(UserDetailsServiceImpl userDetailsService, JwtAuthFilter jwtAuthFilter) {
         this.userDetailsService = userDetailsService;
+        this.jwtAuthFilter = jwtAuthFilter;
     }
 
     @Bean
@@ -28,24 +36,21 @@ public class SecurityConfigs {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
                         auth
-                                // Allow only POST requests to the employees endpoint
-                                .requestMatchers(
-                                        HttpMethod.POST,
-                                        "/api/v1/employees"
-                                )
-                                .permitAll()
-                                .requestMatchers("/api/v1/auth/**",
-                                        "/api-docs",
-                                        "/swagger-ui.html"
-                                )
+                                .requestMatchers(HttpMethod.POST, "/api/v1/employees")
+                                .permitAll()// Allow only POST requests to the employees endpoint
+                                .requestMatchers("/api/v1/auth/**", "/api-docs", "/swagger-ui.html")
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()
                 )
-                .httpBasic(Customizer
-                        .withDefaults()
-                )
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .build();
+    }
+
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws AuthenticationException {
+        return config.getAuthenticationManager();
     }
 
     @Bean
@@ -93,5 +98,5 @@ public class SecurityConfigs {
     However, when we move to our JWT implementation, you will need to expose it as a bean.
     With JWTs, we usually create a custom /login endpoint (e.g., in an AuthController) where we receive the username and
     password from the JSON request body. To verify those credentials in our controller, we have to inject the
-    AuthenticationManager and manually call its .authenticate() method.
+    AuthenticationManager and manually call its .authenticate() method. Sor for that we need AuthenticationManager bean.
  */
