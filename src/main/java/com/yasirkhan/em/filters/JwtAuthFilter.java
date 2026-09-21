@@ -37,8 +37,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (path.equals("/api/v1/employees") && method.equals("POST")) {
             return true;
         }
-
-        return path.startsWith("/api/v1/auth/") ||
+        
+        return path.startsWith("/api/v1/auth") ||
+                path.startsWith("/login") ||
                 path.startsWith("/api-docs") ||
                 path.startsWith("/swagger-ui.html");
     }

@@ -19,11 +19,13 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
-    @Column(nullable = false, unique = true, length = 150)
+    @Column(unique = true, length = 150)
     private String username;
 
-    @Column(nullable = false)
     private String password;
+
+    @Column(name = "google_id", unique = true)
+    private String googleId;
 
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -91,6 +93,10 @@ public class User implements UserDetails {
         this.password = password;
     }
 
+    public String getGoogleId() { return googleId; }
+
+    public void setGoogleId(String googleId) { this.googleId = googleId; }
+
     public Role getRole() {
         return role;
     }
@@ -116,6 +122,7 @@ public class User implements UserDetails {
 
         private String username;
         private String password;
+        private String googleId;
         private Role role;
         private Employee employee;
 
@@ -126,6 +133,11 @@ public class User implements UserDetails {
 
         public Builder password(String password) {
             this.password = password;
+            return this;
+        }
+
+        public Builder googleId(String googleId) {
+            this.googleId = googleId;
             return this;
         }
 
