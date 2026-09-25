@@ -29,6 +29,8 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
         this.userRepository = userRepository;
     }
 
+
+
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
 
@@ -80,8 +82,17 @@ public class OAuth2UserService extends DefaultOAuth2UserService {
             }
         }
 
+        /*
+         * Constructs a {@code DefaultOAuth2User} using the provided parameters.
+         * @param authorities the authorities granted to the user
+         * @param attributes the attributes about the user
+         * @param nameAttributeKey the key used to access the user's "name" from getAttributes()
+         * When returning the DefaultOAuth2User, Spring Security's built-in OAuth2LoginAuthenticationFilter takes over.
+         * The filter wraps this returned user object into a fully authenticated OAuth2AuthenticationToken and automatically
+         * injects it into the SecurityContextHolder
+         */
         return new DefaultOAuth2User(
-                Collections.singleton(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
+                user.getAuthorities(),
                 attributes,
                 "email"
         );

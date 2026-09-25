@@ -1,9 +1,11 @@
 package com.yasirkhan.em.configs;
 
 import com.yasirkhan.em.filters.JwtAuthFilter;
+import com.yasirkhan.em.handlers.OAuth2FailureHandler;
 import com.yasirkhan.em.handlers.OAuth2SuccessHandler;
 import com.yasirkhan.em.services.implementations.OAuth2UserService;
 import com.yasirkhan.em.services.implementations.UserDetailsServiceImpl;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -28,12 +30,14 @@ public class SecurityConfigs {
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final OAuth2FailureHandler oAuth2FailureHandler;
     private final OAuth2UserService oAuth2UserService;
 
-    public SecurityConfigs(UserDetailsServiceImpl userDetailsService, JwtAuthFilter jwtAuthFilter, OAuth2SuccessHandler oAuth2SuccessHandler, OAuth2UserService oAuth2UserService) {
+    public SecurityConfigs(UserDetailsServiceImpl userDetailsService, JwtAuthFilter jwtAuthFilter, OAuth2SuccessHandler oAuth2SuccessHandler, OAuth2FailureHandler oAuth2FailureHandler, OAuth2UserService oAuth2UserService) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthFilter = jwtAuthFilter;
         this.oAuth2SuccessHandler = oAuth2SuccessHandler;
+        this.oAuth2FailureHandler = oAuth2FailureHandler;
         this.oAuth2UserService = oAuth2UserService;
     }
 
@@ -43,12 +47,17 @@ public class SecurityConfigs {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
                         auth
-                                .requestMatchers(HttpMethod.POST, "/api/v1/employees")
-                                .permitAll()// Allow only POST requests to the employees endpoint
-                                .requestMatchers("/api/v1/auth/**", "/api-docs", "/swagger-ui.html")
-                                .permitAll()
-                                .anyRequest()
-                                .authenticated()
+                                .requestMatchers(HttpMethod.POST, "/api/v1/employees").permitAll()
+                                .requestMatchers(SecurityConstants.PUBLIC_URLS).permitAll()
+                                .anyRequest().authenticated()
+                )
+                .exceptionHandling(exception -> exception
+                        .authenticationEntryPoint((request, response, authException) -> {
+                            // Tell the frontend the request is unauthorized
+                            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                            response.setContentType("application/json");
+                            response.getWriter().write("{\"error\": \"Unauthorized. Please log in.\"}");
+                        })
                 )
                 .oauth2Login(oauth2 ->
                         oauth2
@@ -59,6 +68,7 @@ public class SecurityConfigs {
                                         info.userService(oAuth2UserService)
                                 )
                                 .successHandler(oAuth2SuccessHandler)
+                                .failureHandler(oAuth2FailureHandler)
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
