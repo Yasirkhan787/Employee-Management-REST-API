@@ -1,5 +1,6 @@
 package com.yasirkhan.em.filters;
 
+import com.yasirkhan.em.configs.SecurityConstants;
 import com.yasirkhan.em.exceptions.TokenNotFoundException;
 import com.yasirkhan.em.services.JwtService;
 import jakarta.servlet.FilterChain;
@@ -12,6 +13,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
@@ -22,10 +24,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final HandlerExceptionResolver exceptionResolver;
+    private final AntPathMatcher pathMatcher;
 
-    public JwtAuthFilter(JwtService jwtService, @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver) {
+    public JwtAuthFilter(JwtService jwtService, @Qualifier("handlerExceptionResolver") HandlerExceptionResolver exceptionResolver, AntPathMatcher pathMatcher) {
         this.jwtService = jwtService;
         this.exceptionResolver = exceptionResolver;
+        this.pathMatcher = pathMatcher;
     }
 
     @Override
@@ -37,11 +41,15 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         if (path.equals("/api/v1/employees") && method.equals("POST")) {
             return true;
         }
-        
-        return path.startsWith("/api/v1/auth") ||
-                path.startsWith("/login") ||
-                path.startsWith("/api-docs") ||
-                path.startsWith("/swagger-ui.html");
+
+        // Check if the current path matches any of the public wildcard patterns
+        for (String pattern : SecurityConstants.PUBLIC_URLS) {
+            if (pathMatcher.match(pattern, path)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     @Override
