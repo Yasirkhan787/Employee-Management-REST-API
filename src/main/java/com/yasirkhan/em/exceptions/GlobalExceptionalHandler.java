@@ -9,6 +9,13 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.InsufficientAuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import io.jsonwebtoken.security.SignatureException;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.UnsupportedJwtException;
+
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,7 +31,6 @@ public class GlobalExceptionalHandler {
                 exception.getMessage(),
                 LocalDateTime.now()
         );
-
         return new ResponseEntity<>(errorResponse, exception.getStatus());
     }
 
@@ -36,7 +42,6 @@ public class GlobalExceptionalHandler {
                 exception.getMessage(),
                 LocalDateTime.now()
         );
-
         return new ResponseEntity<>(errorResponse, exception.getStatus());
     }
 
@@ -71,7 +76,6 @@ public class GlobalExceptionalHandler {
                 exception.getMessage(),
                 LocalDateTime.now()
         );
-
         return new ResponseEntity<>(errorResponse, exception.getStatus());
     }
 
@@ -83,7 +87,6 @@ public class GlobalExceptionalHandler {
                 exception.getMessage(),
                 LocalDateTime.now()
         );
-
         return new ResponseEntity<>(errorResponse, exception.getStatus());
     }
 
@@ -95,20 +98,72 @@ public class GlobalExceptionalHandler {
                 exception.getMessage(),
                 LocalDateTime.now()
         );
-
         return new ResponseEntity<>(errorResponse, exception.getStatus());
+    }
+
+    // Handle Authorization Failures (Role/Permission missing)
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException exception) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.FORBIDDEN.value(),
+                "You do not have permission to access this resource: " + exception.getMessage(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.FORBIDDEN);
+    }
+
+    // Handle Missing or Insufficient Authentication
+    @ExceptionHandler(InsufficientAuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleInsufficientAuthentication(InsufficientAuthenticationException exception) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Full authentication is required to access this resource.",
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    // Handle Invalid JWT Signatures
+    @ExceptionHandler(SignatureException.class)
+    public ResponseEntity<ErrorResponse> handleSignatureException(SignatureException exception) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                "Invalid JWT signature. The token has been tampered with.",
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    // Handle Malformed or Unsupported JWTs
+    @ExceptionHandler({MalformedJwtException.class, UnsupportedJwtException.class, IllegalArgumentException.class})
+    public ResponseEntity<ErrorResponse> handleMalformedJwtException(Exception exception) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.BAD_REQUEST.value(),
+                "Invalid JWT token format.",
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    // Handle OAuth2 Login Failures (e.g., Unverified Email)
+    @ExceptionHandler(OAuth2AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleOAuth2AuthenticationException(OAuth2AuthenticationException exception) {
+        ErrorResponse errorResponse = new ErrorResponse(
+                HttpStatus.UNAUTHORIZED.value(),
+                "OAuth2 Authentication Failed: " + exception.getMessage(),
+                LocalDateTime.now()
+        );
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
     }
 
     // Fallback for any other unhandled exceptions
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception exception) {
-
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
                 "An unexpected error occurred on the server: " + exception.getMessage(),
                 LocalDateTime.now()
         );
-
         return new ResponseEntity<>(error, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

@@ -13,6 +13,8 @@ import com.yasirkhan.em.repositories.UserRepository;
 import com.yasirkhan.em.services.EmployeeService;
 import com.yasirkhan.em.specifications.EmployeeSpecification;
 import jakarta.transaction.Transactional;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Pageable;
@@ -110,6 +112,7 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
+    @PostAuthorize("hasAuthority('EMPLOYEE_VIEW_ALL') or @employeeSecurity.isOwner(returnObject, authentication.name)")
     public EmployeeResponse getEmployeeById(UUID id) {
         Employee dbEmployee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
@@ -121,9 +124,11 @@ public class EmployeeServiceImpl implements EmployeeService {
     private EmployeeResponse mapToResponse(Employee emp) {
         return new EmployeeResponse(
                 emp.getId(),
+                emp.getUser().getUsername(),
                 emp.getName(),
                 emp.getEmail(),
                 emp.getDepartment(),
+                emp.getUser().getRole().name(),
                 emp.getSalary(),
                 emp.getJoiningDate()
         );

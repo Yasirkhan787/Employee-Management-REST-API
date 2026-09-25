@@ -2,6 +2,7 @@ package com.yasirkhan.em.handlers;
 
 import com.yasirkhan.em.entities.Employee;
 import com.yasirkhan.em.entities.User;
+import com.yasirkhan.em.exceptions.ResourceNotFoundException;
 import com.yasirkhan.em.repositories.EmployeeRepository;
 import com.yasirkhan.em.services.JwtService;
 import jakarta.servlet.ServletException;
@@ -40,7 +41,7 @@ public class OAuth2SuccessHandler implements AuthenticationSuccessHandler {
             }
 
             User user = employeeRepository.findByEmail(email)
-                    .orElseThrow(() -> new RuntimeException("User not found after OAuth2 login"))
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found after OAuth2 login"))
                     .getUser();
 
             Map<String, Object> claims = new HashMap<>();

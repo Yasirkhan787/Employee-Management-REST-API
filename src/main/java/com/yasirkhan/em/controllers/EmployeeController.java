@@ -9,6 +9,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.Pageable;
 
@@ -26,6 +27,7 @@ public class EmployeeController {
     }
 
     // Add New Employee
+    @PreAuthorize("hasAuthority('EMPLOYEE_ADD')")
     @PostMapping
     public ResponseEntity<EmployeeResponse> addEmployee(
             @Valid @RequestBody EmployeeRequest request)
@@ -35,6 +37,7 @@ public class EmployeeController {
     }
 
     // Update an Employee
+    @PreAuthorize("hasAuthority('EMPLOYEE_UPDATE')")
     @PutMapping("{id}")
     public ResponseEntity<EmployeeResponse> updateEmployee(
             @PathVariable UUID id,
@@ -45,6 +48,7 @@ public class EmployeeController {
     }
 
     // Delete Employee
+    @PreAuthorize("hasAuthority('EMPLOYEE_DELETE')")
     @DeleteMapping("{id}")
     public ResponseEntity<Void> deleteEmployee(@PathVariable UUID id) {
         service.deleteEmployee(id);
@@ -63,6 +67,7 @@ public class EmployeeController {
          * Sort = Unsorted </br>
          * We can override Spring Default by Using @PageableDefault annotation
      */
+    @PreAuthorize("hasAuthority('EMPLOYEE_VIEW_ALL')")
     @GetMapping
     public ResponseEntity<List<EmployeeResponse>> getAllEmployees(
             @PageableDefault(page = 0, size = 5, sort = "id", direction = Sort.Direction.ASC)
@@ -73,6 +78,7 @@ public class EmployeeController {
     }
 
     // Get Employee By ID
+    @PreAuthorize("hasAuthority('EMPLOYEE_VIEW')")
     @GetMapping("{id}")
     public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getEmployeeById(id));
