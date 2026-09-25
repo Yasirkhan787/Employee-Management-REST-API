@@ -1,6 +1,8 @@
 package com.yasirkhan.em.configs;
 
 import com.yasirkhan.em.filters.JwtAuthFilter;
+import com.yasirkhan.em.handlers.OAuth2SuccessHandler;
+import com.yasirkhan.em.services.implementations.OAuth2UserService;
 import com.yasirkhan.em.services.implementations.UserDetailsServiceImpl;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -8,8 +10,8 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -20,14 +22,19 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
+@EnableMethodSecurity
 public class SecurityConfigs {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final JwtAuthFilter jwtAuthFilter;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
+    private final OAuth2UserService oAuth2UserService;
 
-    public SecurityConfigs(UserDetailsServiceImpl userDetailsService, JwtAuthFilter jwtAuthFilter) {
+    public SecurityConfigs(UserDetailsServiceImpl userDetailsService, JwtAuthFilter jwtAuthFilter, OAuth2SuccessHandler oAuth2SuccessHandler, OAuth2UserService oAuth2UserService) {
         this.userDetailsService = userDetailsService;
         this.jwtAuthFilter = jwtAuthFilter;
+        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
+        this.oAuth2UserService = oAuth2UserService;
     }
 
     @Bean
@@ -42,6 +49,16 @@ public class SecurityConfigs {
                                 .permitAll()
                                 .anyRequest()
                                 .authenticated()
+                )
+                .oauth2Login(oauth2 ->
+                        oauth2
+                                .authorizationEndpoint(auth ->
+                                        auth.baseUri("/api/v1/auth/oauth2")
+                                )
+                                .userInfoEndpoint(info ->
+                                        info.userService(oAuth2UserService)
+                                )
+                                .successHandler(oAuth2SuccessHandler)
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))

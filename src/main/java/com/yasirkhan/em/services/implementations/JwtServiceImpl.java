@@ -52,12 +52,29 @@ public class JwtServiceImpl implements JwtService {
 
     @Override
     public boolean isTokenValid(String token, UserDetails userDetails) {
-        // If the token is expired, extractUsername() triggers extractAllClaims(),which will instantly throw our custom TokenExpiredException.
-        // If it is NOT expired, we safely get the username and verify it against the DB.
-        String username = extractUsername(token);
+        // Extract the identifier (could be email OR username) from the token
+        String tokenIdentifier = extractUsername(token);
 
-        if (!username.equals(userDetails.getUsername())) {
-            throw new ResourceNotFoundException("User Not Found with username: " + username);
+        // Cast UserDetails to your actual User entity to access both fields
+        if (userDetails instanceof com.yasirkhan.em.entities.User user) {
+
+            String dbUsername = user.getUsername();
+            String dbEmail = (user.getEmployee() != null) ? user.getEmployee().getEmail() : null;
+
+            // Check if the token's subject matches EITHER the username OR the email
+            boolean matchesUsername = tokenIdentifier.equals(dbUsername);
+            boolean matchesEmail = tokenIdentifier.equals(dbEmail);
+
+            if (!matchesUsername && !matchesEmail) {
+                throw new ResourceNotFoundException("Token identifier does not match the registered user: " + tokenIdentifier);
+            }
+
+            return true;
+        }
+
+        // Fallback for standard Spring Security users (if any)
+        if (!tokenIdentifier.equals(userDetails.getUsername())) {
+            throw new ResourceNotFoundException("User Not Found with identifier: " + tokenIdentifier);
         }
 
         return true;
