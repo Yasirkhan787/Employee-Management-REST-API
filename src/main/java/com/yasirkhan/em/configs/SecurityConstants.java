@@ -15,6 +15,7 @@ public class SecurityConstants {
             "/configuration/security",
             "/swagger-ui/**",
             "/webjars/**",
-            "/swagger-ui.html"
+            "/swagger-ui.html",
+            "/actuator/**"   // learning only! lock down in production
     };
 }

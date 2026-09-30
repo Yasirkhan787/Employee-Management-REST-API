@@ -1,8 +1,6 @@
 package com.yasirkhan.em.controllers;
 
-import com.yasirkhan.em.dtos.EmployeeRequest;
-import com.yasirkhan.em.dtos.EmployeeResponse;
-import com.yasirkhan.em.dtos.EmployeeSearchCriteria;
+import com.yasirkhan.em.dtos.*;
 import com.yasirkhan.em.services.EmployeeService;
 import jakarta.validation.Valid;
 import org.springframework.data.domain.Sort;
@@ -41,7 +39,7 @@ public class EmployeeController {
     @PutMapping("{id}")
     public ResponseEntity<EmployeeResponse> updateEmployee(
             @PathVariable UUID id,
-            @Valid @RequestBody EmployeeRequest request)
+            @Valid @RequestBody EmployeeUpdateRequest request)
     {
         EmployeeResponse response = service.updateEmployee(id, request);
         return ResponseEntity.ok(response);
@@ -82,5 +80,11 @@ public class EmployeeController {
     @GetMapping("{id}")
     public ResponseEntity<EmployeeResponse> getEmployeeById(@PathVariable UUID id) {
         return ResponseEntity.ok(service.getEmployeeById(id));
+    }
+
+    @PreAuthorize("hasAuthority('EMPLOYEE_VIEW')")
+    @GetMapping("/{id}/salary-insight")
+    public ResponseEntity<SalaryInsightResponse> salaryInsight(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.getSalaryInsight(id));
     }
 }

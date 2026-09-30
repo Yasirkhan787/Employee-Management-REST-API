@@ -1,6 +1,8 @@
 package com.yasirkhan.em.exceptions;
 
 import com.yasirkhan.em.dtos.ErrorResponse;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.retry.MaxRetriesExceededException;
 import org.springframework.data.core.PropertyReferenceException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -154,6 +156,25 @@ public class GlobalExceptionalHandler {
                 LocalDateTime.now()
         );
         return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    // If Circuit Breaker somewhere without a fallback method
+    @ExceptionHandler(CallNotPermittedException.class)
+    public ResponseEntity<ErrorResponse> handleCircuitOpen(CallNotPermittedException ex) {
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(
+                        503,
+                        "Downstream service temporarily unavailable. Please retry later.",
+                        LocalDateTime.now())
+                );
+    }
+
+    // Only needed if you don't use a fallbackMethod
+    @ExceptionHandler(MaxRetriesExceededException.class)
+    public ResponseEntity<ErrorResponse> handleMaxRetries(MaxRetriesExceededException ex) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new ErrorResponse(503, "Downstream service unavailable after multiple attempts.", LocalDateTime.now()));
     }
 
     // Fallback for any other unhandled exceptions

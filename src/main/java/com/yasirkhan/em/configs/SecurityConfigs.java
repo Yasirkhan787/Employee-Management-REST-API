@@ -42,12 +42,12 @@ public class SecurityConfigs {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) {
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         return http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth ->
                         auth
-                                .requestMatchers(HttpMethod.POST, "/api/v1/employees").permitAll()
+                                //.requestMatchers(HttpMethod.POST, "/api/v1/employees").permitAll()  // For Testing
                                 .requestMatchers(SecurityConstants.PUBLIC_URLS).permitAll()
                                 .anyRequest().authenticated()
                 )

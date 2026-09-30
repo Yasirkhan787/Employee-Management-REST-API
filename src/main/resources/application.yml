@@ -1,0 +1,51 @@
+resilience4j:
+  circuitbreaker:
+    instances:
+      salaryBenchmark:
+        registerHealthIndicator: true
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 30
+        minimumNumberOfCalls: 20
+        failureRateThreshold: 50
+        slowCallDurationThreshold: 3s
+        slowCallRateThreshold: 60
+        waitDurationInOpenState: 20s
+        permittedNumberOfCallsInHalfOpenState: 2
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        recordExceptions:
+          - org.springframework.web.client.HttpServerErrorException
+          - org.springframework.web.client.ResourceAccessException
+        ignoreExceptions:
+          - org.springframework.web.client.HttpClientErrorException
+
+  retry:
+    instances:
+      salaryBenchmark:
+        maxAttempts: 3
+        waitDuration: 500ms
+        enableExponentialBackoff: true
+        exponentialBackoffMultiplier: 2
+        retryExceptions:
+          - org.springframework.web.client.ResourceAccessException
+          - org.springframework.web.client.HttpServerErrorException
+        ignoreExceptions:
+          - org.springframework.web.client.HttpClientErrorException
+
+  ratelimiter:
+    instances:
+      salaryBenchmark:
+        limitForPeriod: 3          # only 3 calls allowed per refresh period
+        limitRefreshPeriod: 1s    # window resets every 1 seconds
+        timeoutDuration: 2s        # a call waits up to 2s for a free permit, else rejected
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,circuitbreakers,circuitbreakerevents,retries,retryevents,ratelimiters,ratelimiterevents,metrics
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always

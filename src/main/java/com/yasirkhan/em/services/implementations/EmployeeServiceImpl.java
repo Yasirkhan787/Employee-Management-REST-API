@@ -1,8 +1,7 @@
 package com.yasirkhan.em.services.implementations;
 
-import com.yasirkhan.em.dtos.EmployeeRequest;
-import com.yasirkhan.em.dtos.EmployeeResponse;
-import com.yasirkhan.em.dtos.EmployeeSearchCriteria;
+import com.yasirkhan.em.clients.SalaryBenchmarkClient;
+import com.yasirkhan.em.dtos.*;
 import com.yasirkhan.em.entities.Employee;
 import com.yasirkhan.em.entities.User;
 import com.yasirkhan.em.entities.enums.Role;
@@ -12,7 +11,7 @@ import com.yasirkhan.em.repositories.EmployeeRepository;
 import com.yasirkhan.em.repositories.UserRepository;
 import com.yasirkhan.em.services.EmployeeService;
 import com.yasirkhan.em.specifications.EmployeeSpecification;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.security.access.prepost.PostAuthorize;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -29,11 +28,13 @@ public class EmployeeServiceImpl implements EmployeeService {
     private final EmployeeRepository employeeRepository;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final SalaryBenchmarkClient benchmarkClient;
 
-    public EmployeeServiceImpl(EmployeeRepository employeeRepository, UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public EmployeeServiceImpl(EmployeeRepository employeeRepository, UserRepository userRepository, PasswordEncoder passwordEncoder, SalaryBenchmarkClient benchmarkClient) {
         this.employeeRepository = employeeRepository;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.benchmarkClient = benchmarkClient;
     }
 
     @Override
@@ -71,18 +72,30 @@ public class EmployeeServiceImpl implements EmployeeService {
     }
 
     @Override
-    public EmployeeResponse updateEmployee(UUID id, EmployeeRequest request) {
+    @Transactional
+    public EmployeeResponse updateEmployee(UUID id, EmployeeUpdateRequest request) {
 
         Employee dbEmployee = findEmployeeById(id);
-        dbEmployee.setName(request.name());
-        dbEmployee.setEmail(request.email());
-        dbEmployee.setDepartment(request.department());
-        dbEmployee.setSalary(request.salary());
-        Employee updated = employeeRepository.save(dbEmployee);
-        return mapToResponse(updated);
+
+        // Only update fields that are actually provided in the request
+        if (request.name() != null) {
+            dbEmployee.setName(request.name());
+        }
+        if (request.email() != null) {
+            dbEmployee.setEmail(request.email());
+        }
+        if (request.department() != null) {
+            dbEmployee.setDepartment(request.department());
+        }
+//        if (request.salary() != null) {
+//            dbEmployee.setSalary(request.salary());
+//        }
+
+        return mapToResponse(dbEmployee);
     }
 
     @Override
+    @Transactional
     public void deleteEmployee(UUID id) {
         Employee dbEmployee = employeeRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
@@ -102,7 +115,6 @@ public class EmployeeServiceImpl implements EmployeeService {
     @Override
     public List<EmployeeResponse> getAllEmployees(EmployeeSearchCriteria search, Pageable pageable) {
 
-
         return employeeRepository
                 .findAllBy(EmployeeSpecification.getEmployeeSpecification(search), pageable)
                 .getContent()
@@ -118,6 +130,19 @@ public class EmployeeServiceImpl implements EmployeeService {
                 .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
 
         return mapToResponse(dbEmployee);
+    }
+
+    // Get salary insights
+    @Override
+    public SalaryInsightResponse getSalaryInsight(UUID id) {
+
+        Employee employee = employeeRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Employee not found with ID: " + id));
+
+        BenchmarkResponse benchmark = benchmarkClient.getBenchmark(employee.getDepartment());
+
+        return new SalaryInsightResponse(employee.getId(), employee.getName(),
+                employee.getDepartment(), employee.getSalary(), benchmark);
     }
 
     // Helper methods
